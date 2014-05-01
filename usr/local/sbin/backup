@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # $Id$
-# Author jon <jmoyano@silice.biz> 
+# Author jon <wincus@gmail.com>
 
 TAR=$(which tar)
 RUNPARTS=$(which run-parts)

@@ -5,7 +5,7 @@
 ROOT=/var/local/backup
 
 # notificar a:
-# MAIL=jmoyano@silice.biz
+# MAIL=wincus@gmail.com
 
 # deshabilitar todos los trabajos
 # DISABLED=si
