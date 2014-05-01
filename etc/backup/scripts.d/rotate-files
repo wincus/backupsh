@@ -1,0 +1,41 @@
+#!/bin/bash
+
+[ ${ROTATE} ] || exit 0
+
+MVOPTS=" -f ${VERBOSE:+-v} -u"
+
+case $TIPO in
+completo)
+	echo -n "Rotando backups:"
+	
+	for i in $(seq ${ROTATE} -1 1)
+	do
+		echo -n "."
+		[ ! -d ${ROOT}/semana-${i} ] && mkdir ${ROOT}/semana-${i}
+		case $i in
+		1)
+			for file in ${ROOT}/*
+			do
+				if [ -f $file ]; then			    
+					mv ${MVOPTS} $file ${ROOT}/semana-1/
+				fi
+			done
+			;;
+		*)
+
+
+			for file in ${ROOT}/semana-$((${i}-1))/*
+			do
+				if [ -f $file ];then
+					mv ${MVOPTS} $file ${ROOT}/semana-$((${i}))/
+				fi
+			done
+			;;
+
+		esac
+	done
+	;;
+*)
+esac
+
+exit 0

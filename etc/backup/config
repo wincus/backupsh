@@ -1,0 +1,14 @@
+# opciones generales de configuración para aplicables
+# a todos los trabajos. Son sobreescritas por las opciones
+# particulares de cada trabajo
+
+ROOT=/var/local/backup
+
+# notificar a:
+# MAIL=jmoyano@silice.biz
+
+# deshabilitar todos los trabajos
+# DISABLED=si
+
+# comprimir respaldos
+# ZIP=si

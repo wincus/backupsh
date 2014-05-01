@@ -1,0 +1,8 @@
+#!/bin/bash
+
+echo "Espacio en disco:"
+df -h ${ROOT}
+echo 
+
+exit 0
+

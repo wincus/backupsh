@@ -1,0 +1,19 @@
+#!/bin/bash
+
+[ ${LDAPDIR} ] || exit 0
+
+
+if [ ! -d ${LDAPDIR} ];then
+	mkdir -p ${LDAPDIR}
+fi
+
+SLAPCAT=$(which slapcat)
+
+if [ ! ${SLAPCAT} ];then
+	echo "No encuentro slapcat."
+	exit 1
+fi
+
+$SLAPCAT > ${LDAPDIR}/ldapbackup
+
+exit 0

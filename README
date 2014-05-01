@@ -1,0 +1,108 @@
+backupsh es un script para realizar ... backups ;) 
+
+FEATURES
+	-- Simple de usar
+	-- Pensado para servidores desatendidos
+	-- Realiza backup completos, incrementales y diferenciales
+	-- Rota n semanas de respaldo
+	-- Envía las copias de respaldo a un servidor http remoto
+	   (con soporte DAV)
+	-- Envía un correo de notificación
+	-- Respalda reglas de iptables, ldap, mysql, etc
+	-- Es facilmente customizable
+
+	
+USO
+
+Desde la línea de comandos (o desde cron): backup TRABAJO TIPO [--test]
+donde:
+	* TRABAJO es el nombre del dir donde están los archivos, ej job1, job2, etc
+	* TIPO puede ser full, diff o inc para backups completos, diferenciales o incrementales
+	--test opcional, no almacena el archivo de respaldo (pero realiza todo el  proceso, útil 
+	para rastrear errores)
+
+
+FUNCIONAMIENTO
+
+Cada dir dentro de /var/local/backup define un trabajo:
+
+ROOT/  (puede configurarse en /etc/backup/config)
+ | 
+ ->  job1/  (nombre con el que se realiza el backup, por ej: backup job1 full)
+ |     |
+ |     '-> log/ (aqui se almacenan los logs)
+ |     |
+ |     '-> config/ (aqui se almacenan archivos de configuracion)
+ |     |      |
+ |     |      '-> includes  (paths a incluir, uno x linea)
+ |     |      '-> excludes  (patrones a excluir, uno x linea)
+ |     |      '-> defaults  (archivo de conf)
+ |     |
+ |     '-> pre-run/  (scripts que se ejecutan antes de realizar el respaldo)
+ |     '-> post-run/ (scripts que se ejecutan despues de realizar el respaldo)
+ |     '-> failed-run/ (scripts que se ejecutan solo si el respaldo falló)
+ |
+ '-> job2/
+      .
+      .
+      .
+      etc.
+
+
+
+SCRIPTERIA
+
+La forma de adecuar el funcionamiento a tus necesidades es a través de tres dirs:
+
+	pre-run/* : scripts que se ejecutan en orden *antes* de realizar el backup
+	post-run/*: scripts que se ejecutan *despues* de realizar el backup
+	failed-run/*: scripts que se ejecutan en caso de falla
+
+						    						si	
+INICIO --> pre-run/* --> backup --> se realizó OK? --->	post-run/*
+										|
+										|no
+										V
+										failed-run/*
+
+
+Cada uno de estos dirs contiene links simbólicos a scripts que residen en /etc/backup/scripts.d.
+Algunos que ya hice:
+
+disk-free: proporciona información de espacio libre en el disco
+iptables: realiza la copia de seguridad de las reglas de iptables.
+ldap: lo mismo con la db ldap.
+list-files: lista en orden cronológico los archivos producto de copias anteriores.
+logger: registra en el syslog.
+mail-err: envia un correo notificando un error del proceso.
+mail-ok: envia un correo notificando que el proceso se ejecutó con éxito.
+rotate-files: rota los archivos de respaldo viejos.
+send-files: envía los archivos de respaldo a un server remoto.
+time-start: inicializa un contador
+time-stop: imprime la cantidad de segunos que demoró el proceso en realizarse.
+
+faltan:
+ftp: para enviar los archivos a un ftp-site
+cleaner: eliminar archivos de respaldo viejos
+
+
+FAQS:
+
+Q: como lo croneo? 
+
+A:
+# m h  dom mon dow   command
+32  14  *   *   1-4   backup etc diff
+32  14  *   *   5     backup etc full
+
+ó
+
+# m h  dom mon dow   command
+32  14  *   *   1-4   mkallbackup diff
+32  14  *   *   5     mkallbackup full
+
+
+Q: me genera un tar vacio!
+A: Asegurate que el archivo excludes no contenga lineas en blanco.
+
+

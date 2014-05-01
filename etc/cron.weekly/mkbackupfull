@@ -1,0 +1,24 @@
+#!/bin/sh
+
+BACKUP=$(which backup)
+
+if [ ! ${BACKUP} ];then
+	echo "No sé donde esta el script backup"
+	exit 1
+fi
+
+if [ -f /etc/backup/config ];then
+	. /etc/backup/config
+fi
+
+if [ ! ${ROOT} ]; then 
+	echo "No sé donde están los trabajos"
+	exit 1
+fi
+
+for job in $(ls ${ROOT})
+do
+	${BACKUP} ${job} full
+done
+
+exit 0

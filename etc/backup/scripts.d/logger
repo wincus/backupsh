@@ -1,0 +1,4 @@
+#!/bin/bash
+
+$(which logger) "El backup falló. Puede revisar el archivo ${LOG} para mas detalles."
+exit 0

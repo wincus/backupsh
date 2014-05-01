@@ -1,0 +1,32 @@
+#!/bin/bash 
+
+[ ${MAIL} ] || exit 0
+
+SENDMAIL=$(which sendmail)
+HOSTNAME=$(hostname)
+
+
+if [ ! -x ${SENDMAIL} ]; then
+	echo "Error: no existe una interfaz local para enviar correo"
+	exit 1
+fi
+
+tty -s
+if [ $? -gt 0 ]; then
+
+echo "Enviando correo a ${MAIL}"
+
+${SENDMAIL} -t <<EOF
+From: backupsh@${HOSTNAME}
+To: ${MAIL}
+Subject: backup ${TAG} ${TIPO} [ERROR]
+$(cat ${LOG})
+
+EOF
+
+else
+
+	echo "No voy a enviar el correo, ya que Ud. está en una terminal"
+fi
+
+exit 0

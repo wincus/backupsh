@@ -1,0 +1,202 @@
+#!/bin/bash
+#
+# $Id$
+# Author jon <jmoyano@silice.biz> 
+
+TAR=$(which tar)
+RUNPARTS=$(which run-parts)
+LOCK="/var/run/backup.pid"
+
+if [ -f /etc/backup/config ];then
+	 . /etc/backup/config 
+else
+
+cat <<EOF
+$(basename $0): No encuentro el dir de trabajo. Debe crear el archivo
+de configuración /etc/backup/config y definir el valor ROOT.
+EOF
+		exit 1 
+fi
+
+set -a
+
+help()
+{
+cat <<EOF
+$(basename $0): debe especificar dos o mas opciones
+Uso: $(basename $0) trabajo (full|diff|inc) [--test]
+EOF
+exit 0
+}
+
+[ $# -lt 2 ] && help
+
+TRABAJO=$1
+
+if [ -d ${ROOT}/${TRABAJO} ]; then
+
+	ROOT=${ROOT}/${TRABAJO}
+	TARGETS="${ROOT}/config/includes"
+	EXCLUDE="${ROOT}/config/excludes"
+	SNAPSHOT="${ROOT}/config/snapshot"
+
+	[ ! -d ${ROOT}/log ] && mkdir ${ROOT}/log
+
+	LOG="${ROOT}/log/$(date +%A).log"
+
+	tty -s 
+
+	[ $? -gt 0 ] && exec &> ${LOG}
+
+	[ -f ${ROOT}/config/defaults ] && . ${ROOT}/config/defaults
+	
+	if [ -f ${TARGETS} ]; then
+		TARARGS="${TARARGS} --files-from=${TARGETS}"
+	else
+		cat <<EOF
+Error abriendo el archivo ${TARGETS}. Asegúrese que existe el archivo
+${ROOT}/config/includes conteniendo las rutas de los archivos que se 
+deseen resguardar.
+EOF
+	exit 1
+fi
+
+else
+	echo "No existe el trabajo. Asegúrese de crear un directorio llamado ${TRABAJO} dentro de ${ROOT}."
+	exit 1
+fi
+
+shift
+
+while [ $1 ]
+do
+case $1 in
+	diff)
+		TIPO='diferencial'
+		FILE=${ROOT}/$(date +%A)-diff.tar${ZIP:+.gz}
+		if [ ! -f  ${SNAPSHOT} ]; then
+			echo "Error al abrir el archivo ${SNAPSHOT}."
+			exit 1
+		else
+			cp ${SNAPSHOT} ${SNAPSHOT}-1 && SNAPSHOT=${SNAPSHOT}-1
+		fi
+		shift
+		;;
+	inc)
+		TIPO='incremental'
+		FILE=${ROOT}/$(date +%A)-inc.tar${ZIP:+.gz}
+		if [ ! -f  ${SNAPSHOT} ]; then
+			echo "Error al abrir el archivo ${SNAPSHOT}."
+			exit 1
+		fi
+		shift
+		;;
+	full)
+		TIPO='completo'
+		FILE=${ROOT}/$(date +%A)-full.tar${ZIP:+.gz}
+		 [ -f ${SNAPSHOT} ] && rm -f ${SNAPSHOT} 
+		 shift
+		;;
+	--test)
+		FILE=/dev/null
+		TEST=yes	
+		shift
+		;;
+
+	*)
+		echo "$(basename $0): $1 no es una opción reconocida"
+		exit 1
+		;;
+esac
+done
+
+
+if [ ${DISABLED} ]; then
+cat <<EOF
+El trabajo esta deshabilitado. Para activarlo edite el 
+archivo ${ROOT}/config/defaults y comente la opcion DISABLED."
+EOF
+
+	exit 0
+fi
+
+TARARGS="${TARARGS} ${ZIP:+--gzip} ${VERBOSE:+--verbose} ${TOTALS:+--totals}"
+
+[ -f ${EXCLUDE} ] && TARARGS="${TARARGS} --exclude-from=${EXCLUDE}"
+
+trap 'echo "Terminando inesperadamente...";rm -f ${LOCK}; exit 1' 1 2 9 15
+
+if [ -f ${LOCK} ]; then
+	cat <<EOF
+Hay otro proceso de backup ejecutándose. Para evitar conflictos
+esta instancia no comenzará hasta tanto no termine el proceso en 
+ejecución. (si esta seguro que no hay otro proceso de backup, borre
+el archivo ${LOCK}).
+EOF
+
+fi
+
+lockfile ${LOCK}
+
+if [ ! $? -eq 0 ];then
+	echo "No se puede escribir el archivo ${LOCK}. Verifique los permisos y vuelva a internarlo."
+	exit 1
+fi
+
+
+cat <<EOF
+------------------------------------------------------------
+	   	    ..: Iniciando trabajo $TRABAJO :..
+			
+Fecha: $(date)
+Tipo: $TIPO
+Ruta(s): $(cat $TARGETS)
+Host: $(hostname)
+
+EOF
+
+if [ -d ${ROOT}/pre-run ]; then
+	echo
+	echo "Scripts Pre-Ejecución:"
+	echo
+	${RUNPARTS} ${TEST:+--test} ${VERBOSE:+--verbose} ${ROOT}/pre-run
+	echo 
+else
+	mkdir -p ${ROOT}/pre-run
+fi
+
+$TAR --create $TARARGS --file $FILE --listed-incremental=${SNAPSHOT} 
+
+case $? in 
+0)
+	if [ -d ${ROOT}/post-run ]; then
+		echo
+		echo "Scripts Post-ejecución:"
+		echo
+		${RUNPARTS} ${TEST:+--test} ${VERBOSE:+--verbose} ${ROOT}/post-run
+		echo	
+	else
+		
+		mkdir -p ${ROOT}/post-run
+	fi
+	;;
+*)
+	if [ -d ${ROOT}/failed-run ]; then
+		echo
+		echo "Scripts ejecución fallida:"
+		echo
+		${RUNPARTS} ${TEST:+--test} ${VERBOSE:+--verbose} ${ROOT}/failed-run
+		echo	
+	else
+
+		mkdir -p ${ROOT}/failed-run
+	fi
+
+	echo "El backup falló.Puede revisar el archivo ${LOG} para mas detalles"
+	rm -f ${LOCK} && exit 1
+	;;
+esac
+
+rm -f ${LOCK}
+
+exit 0

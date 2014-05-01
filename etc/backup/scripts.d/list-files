@@ -1,0 +1,10 @@
+#!/bin/bash
+
+[ ${LIST} ] || exit 0
+
+echo "Archivos:"
+cd ${ROOT} && ls -lth *.tar.gz ${ROTATE:+semana-*}
+echo 
+
+
+exit 0

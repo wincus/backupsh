@@ -1,0 +1,13 @@
+#!/bin/bash
+
+[ ${MYSQL} ] || exit 0
+
+MYSQLDUMP=/usr/bin/mysqldump
+TARGET=/tmp/databases
+DATA=bases
+PASSWD=
+
+mkdir -p ${TARGET}
+$MYSQLDUMP --all-databases -p ${PASSWD} > ${TARGET}/${DATA} 
+
+exit 0

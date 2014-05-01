@@ -1,0 +1,32 @@
+# $Id: defaults,v 1.3 2006/11/04 21:08:46 jon Exp $
+#archivo de configuración para el backup de etc
+
+# Nombre distintivo entre comillas!
+TAG="ejemplo iptables"
+
+# para salida verborrágica
+# VERBOSE=si
+
+# dejar en el log el tamaño del arhivo creado
+TOTALS=si
+
+# comprimir el backup (mas lento, menos espacio en disco)
+ZIP=si
+
+# Para desactivar el trabajo
+# DISABLED=si
+
+# semanas para rotar
+ROTATE=6
+
+# enviar correo?
+MAIL=jmoyano@silice.biz
+
+# dav
+# DAVSITE='http://localhost/~respaldo'
+
+# list files?
+LIST=si
+
+# backup iptables en 
+IPTABLES=/tmp/backup-iptables

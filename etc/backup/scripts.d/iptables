@@ -1,0 +1,11 @@
+#!/bin/bash
+
+[ ${IPTABLES} ] || exit 0
+
+if [ ! -d ${IPTABLES} ];then
+	mkdir -p ${IPTABLES}
+fi
+
+IPTBCK=$(which iptables-save)
+$IPTBCK > ${IPTABLES}/rules
+exit 0

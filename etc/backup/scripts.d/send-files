@@ -1,0 +1,46 @@
+#!/bin/bash
+
+[ ${DAVSITE} ] || exit 0
+MOUNTPOINT=/mnt/respaldo
+
+grep -q "^${DAVSITE}" /proc/mounts
+
+case $? in
+0)
+	echo "El recurso ya se encuentra montado"
+	;;
+*)
+	mkdir -p /mnt/respaldo
+	mount -t davfs ${DAVSITE} ${MOUNTPOINT}
+		case $? in
+		0)
+			echo "Conexion remota exitosa"
+			;;
+		*)
+			echo "Error, no pude establecer conexion con ${DAVSITE}"
+			exit 1
+			;;
+		esac
+	;;
+esac
+
+echo "Enviando archivos:"
+$(which rsync) -zr ${VERBOSE:+-v} ${ROOT} ${MOUNTPOINT}
+echo "Desconectando....:"
+umount ${MOUNTPOINT}
+
+grep -q "^${DAVSITE}" /proc/mounts
+
+case $? in
+0)
+	echo "El recurso no se desmontó correctamente"
+	exit 1	
+	;;
+*)
+	exit 0
+esac
+
+
+
+
+

@@ -1,0 +1,11 @@
+#!/bin/sh
+
+[ -f /tmp/flag ] || exit 0
+
+TIMESTART=$(date -r /tmp/flag +%s)
+TIMESTOP=$(date +%s)
+
+echo "Tiempo de proceso: $((${TIMESTOP}-${TIMESTART})) segundos"
+echo
+
+exit 0
